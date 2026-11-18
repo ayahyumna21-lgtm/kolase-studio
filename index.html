@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KolaseStudio - Pembuat Kolase Foto Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=Pacifico&family=Oswald:wght@500;700&family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.7);
+        }
+
+        /* Range Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 999px;
+            background: #374151;
+        }
+        html:not(.dark) input[type="range"]::-webkit-slider-runnable-track {
+            background: #e5e7eb;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #6366f1;
+            margin-top: -5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: transform 0.1s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Checkerboard pattern for transparent preview */
+        .bg-checkerboard {
+            background-image: linear-gradient(45deg, #1f2937 25%, transparent 25%),
+                              linear-gradient(-45deg, #1f2937 25%, transparent 25%),
+                              linear-gradient(45deg, transparent 75%, #1f2937 75%),
+                              linear-gradient(-45deg, transparent 75%, #1f2937 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        html:not(.dark) .bg-checkerboard {
+            background-image: linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
+                              linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
+                              linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
+                              linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+        }
+
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans h-screen flex flex-col overflow-hidden transition-colors duration-200">
+
+    <!-- Top Navigation Bar -->
+    <header class="h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-3 sm:px-5 flex items-center justify-between shrink-0 z-30">
+        <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md">
+                <i data-lucide="layout-grid" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base sm:text-lg tracking-tight leading-none">Kolase<span class="text-indigo-500">Studio</span></h1>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400 hidden sm:block">Editor Kolase Foto Resolusi Tinggi</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions Center -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+            <button onclick="document.getElementById('bulkUploadInput').click()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xs sm:text-sm font-medium transition">
+                <i data-lucide="image-plus" class="w-4 h-4 text-indigo-500"></i>
+                <span class="hidden md:inline">Unggah Foto</span>
+            </button>
+            <input type="file" id="bulkUploadInput" multiple accept="image/*" class="hidden" onchange="handleBulkUpload(event)">
+            <input type="file" id="singleUploadInput" accept="image/*" class="hidden" onchange="handleSingleSlotUpload(event)">
+
+            <button onclick="generateDynamicLayout()" title="Buat Susunan Kotak Asimetris Baru" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-600 dark:text-indigo-400 text-xs sm:text-sm font-semibold transition">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Layout Acak</span>
+            </button>
+
+            <button onclick="shufflePhotos()" title="Acak Posisi Foto" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xs sm:text-sm font-medium transition">
+                <i data-lucide="shuffle" class="w-4 h-4 text-emerald-500"></i>
+                <span class="hidden lg:inline">Acak Foto</span>
+            </button>
+
+            <button onclick="clearAllSlots()" title="Kosongkan Kanvas" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-red-100 dark:bg-gray-800 dark:hover:bg-red-950/60 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                <span class="hidden xl:inline">Reset</span>
+            </button>
+        </div>
+
+        <!-- Right Actions: Theme & Export -->
+        <div class="flex items-center gap-2">
+            <button onclick="toggleTheme()" title="Ubah Tema Gelap/Terang" class="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition">
+                <i data-lucide="sun" id="themeIconSun" class="w-4 h-4 hidden dark:block"></i>
+                <i data-lucide="moon" id="themeIconMoon" class="w-4 h-4 block dark:hidden"></i>
+            </button>
+
+            <button onclick="openExportModal()" class="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-500/25 transition">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Unduh</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+        <!-- Left Navigation Rail + Tool Panel -->
+        <aside class="order-2 md:order-1 flex flex-col md:flex-row bg-white dark:bg-gray-900 border-t md:border-t-0 md:border-r border-gray-200 dark:border-gray-800 shrink-0 z-20 h-[44vh] md:h-auto md:w-[340px] lg:w-[370px]">
+            
+            <!-- Category Tabs (Vertical on Desktop, Horizontal on Mobile) -->
+            <nav class="flex md:flex-col justify-around md:justify-start gap-1 p-1.5 md:p-2 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-950/60 shrink-0">
+                <button onclick="switchTab('layout')" id="tab-btn-layout" class="tab-btn active flex flex-col items-center justify-center gap-1 py-2 px-2.5 md:w-16 rounded-xl text-[11px] font-medium transition bg-indigo-600 text-white shadow-sm">
+                    <i data-lucide="layout-template" class="w-5 h-5"></i>
+                    <span>Layout</span>
+                </button>
+                <button onclick="switchTab('size')" id="tab-btn-size" class="tab-btn flex flex-col items-center justify-center gap-1 py-2 px-2.5 md:w-16 rounded-xl text-[11px] font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-200/70 dark:hover:bg-gray-800 transition">
+                    <i data-lucide="scaling" class="w-5 h-5"></i>
+                    <span>Ukuran</span>
+                </button>
+                <button onclick="switchTab('style')" id="tab-btn-style" class="tab-btn flex flex-col items-center justify-center gap-1 py-2 px-2.5 md:w-16 rounded-xl text-[11px] font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-200/70 dark:hover:bg-gray-800 transition">
+                    <i data-lucide="sliders" class="w-5 h-5"></i>
+                    <span>Gaya</span>
+                </button>
+                <button onclick="switchTab('bg')" id="tab-btn-bg" class="tab-btn flex flex-col items-center justify-center gap-1 py-2 px-2.5 md:w-16 rounded-xl text-[11px] font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-200/70 dark:hover:bg-gray-800 transition">
+                    <i data-lucide="palette" class="w-5 h-5"></i>
+                    <span>Latar</span>
+                </button>
+                <button onclick="switchTab('decor')" id="tab-btn-decor" class="tab-btn flex flex-col items-center justify-center gap-1 py-2 px-2.5 md:w-16 rounded-xl text-[11px] font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-200/70 dark:hover:bg-gray-800 transition">
+                    <i data-lucide="type" class="w-5 h-5"></i>
+                    <span>Teks/Stiker</span>
+                </button>
+            </nav>
+
+            <!-- Tool Panel Content -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-5">
+
+                <!-- TAB 1: LAYOUTS -->
+                <div id="panel-layout" class="tool-panel space-y-4">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Tata Letak Asimetris & Editorial</h2>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">32+ komposisi album dinamis & mosaik tidak kaku</p>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Random Mosaic Generator Box -->
+                    <div class="p-3 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-500/25 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-indigo-600 dark:text-indigo-300 flex items-center gap-1.5">
+                                <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> Generator Mosaik Otomatis
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <label class="text-[11px] text-gray-500 dark:text-gray-400">Slot:</label>
+                                <select id="dynamicSlotCount" class="px-2 py-0.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs font-semibold">
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6" selected>6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="generateDynamicLayout()" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white text-xs font-semibold shadow-sm flex items-center justify-center gap-1.5 transition">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Buat Susunan Asimetris Baru
+                        </button>
+                    </div>
+
+                    <!-- Photo Count Filter Pills -->
+                    <div class="flex flex-wrap gap-1.5" id="layoutCountFilters">
+                        <button onclick="filterLayouts('all')" data-count="all" class="count-filter-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-600 text-white">Semua (32)</button>
+                        <button onclick="filterLayouts('editorial')" data-count="editorial" class="count-filter-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25">✨ Album Editorial (10)</button>
+                        <button onclick="filterLayouts(2)" data-count="2" class="count-filter-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">2-3 Foto</button>
+                        <button onclick="filterLayouts(4)" data-count="4" class="count-filter-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">4-5 Foto</button>
+                        <button onclick="filterLayouts(6)" data-count="6" class="count-filter-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">6-7 Foto</button>
+                        <button onclick="filterLayouts('8+')" data-count="8+" class="count-filter-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">8-10+ Foto</button>
+                    </div>
+
+                    <!-- Layouts Grid -->
+                    <div id="layoutsGrid" class="grid grid-cols-3 gap-2.5 pt-1">
+                        <!-- Generated dynamically by JS -->
+                    </div>
+                </div>
+
+                <!-- TAB 2: CANVAS SIZE & RATIO -->
+                <div id="panel-size" class="tool-panel hidden space-y-5">
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Ukuran & Rasio Kanvas</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Atur dimensi piksel asli untuk hasil unduhan</p>
+                    </div>
+
+                    <!-- Custom Dimensions Box -->
+                    <div class="p-3.5 rounded-2xl bg-gray-100/80 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700/80 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Ukuran Kustom (px)</span>
+                            <button onclick="swapDimensions()" title="Tukar Lebar & Tinggi" class="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-400 font-medium">
+                                <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i> Putar
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] text-gray-500 dark:text-gray-400 mb-1">Lebar (Width)</label>
+                                <input type="number" id="customWidthInput" min="100" max="6000" value="1080" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-semibold focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-gray-500 dark:text-gray-400 mb-1">Tinggi (Height)</label>
+                                <input type="number" id="customHeightInput" min="100" max="6000" value="1080" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-semibold focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+                        <button onclick="applyCustomDimensions()" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition shadow-sm">
+                            Terapkan Ukuran Kustom
+                        </button>
+                    </div>
+
+                    <!-- Presets List -->
+                    <div class="space-y-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Preset Populer</span>
+                        <div id="sizePresetsList" class="grid grid-cols-1 gap-2">
+                            <!-- Generated dynamically by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: SPACING, RADIUS, BORDER & GLOBAL FILTERS -->
+                <div id="panel-style" class="tool-panel hidden space-y-5">
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Bingkai & Tata Letak</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Sesuaikan jarak antar foto dan kelengkungan sudut</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Spacing / Gap -->
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs">
+                                <span class="font-medium text-gray-700 dark:text-gray-300">Jarak Antar Foto (Gutter)</span>
+                                <span id="val-gap" class="font-semibold text-indigo-500">8 px</span>
+                            </div>
+                            <input type="range" id="slider-gap" min="0" max="100" value="8" class="w-full" oninput="updateStyleSetting('gap', this.value)">
+                        </div>
+
+                        <!-- Outer Padding / Margin -->
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs">
+                                <span class="font-medium text-gray-700 dark:text-gray-300">Bingkai Luar (Padding)</span>
+                                <span id="val-padding" class="font-semibold text-indigo-500">12 px</span>
+                            </div>
+                            <input type="range" id="slider-padding" min="0" max="150" value="12" class="w-full" oninput="updateStyleSetting('padding', this.value)">
+                        </div>
+
+                        <!-- Corner Radius -->
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs">
+                                <span class="font-medium text-gray-700 dark:text-gray-300">Kelengkungan Sudut (Radius)</span>
+                                <span id="val-radius" class="font-semibold text-indigo-500">0 px</span>
+                            </div>
+                            <input type="range" id="slider-radius" min="0" max="120" value="0" class="w-full" oninput="updateStyleSetting('radius', this.value)">
+                        </div>
+
+                        <!-- Thin Inner Photo Border -->
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs">
+                                <span class="font-medium text-gray-700 dark:text-gray-300">Garis Bingkai Tiap Foto</span>
+                                <span id="val-borderWidth" class="font-semibold text-indigo-500">0 px</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="slider-borderWidth" min="0" max="24" value="0" class="flex-1" oninput="updateStyleSetting('borderWidth', this.value)">
+                                <input type="color" id="slotBorderColorPicker" value="#ffffff" oninput="updateStyleSetting('borderColor', this.value)" title="Warna Garis Bingkai" class="w-7 h-7 rounded-lg cursor-pointer border border-gray-300 dark:border-gray-700 bg-transparent">
+                            </div>
+                        </div>
+
+                        <!-- Creative Tilt / Freeform Scrapbook Mode -->
+                        <div class="space-y-1.5 pt-2 border-t border-gray-200 dark:border-gray-800">
+                            <div class="flex justify-between text-xs">
+                                <span class="font-medium text-gray-700 dark:text-gray-300">Kemiringan Bebas (Gaya Scrapbook)</span>
+                                <span id="val-tilt" class="font-semibold text-indigo-500">0°</span>
+                            </div>
+                            <input type="range" id="slider-tilt" min="0" max="12" value="0" class="w-full" oninput="updateStyleSetting('tilt', this.value)">
+                        </div>
+
+                        <!-- Shadow Toggle -->
+                        <div class="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-800">
+                            <div>
+                                <p class="text-xs font-medium text-gray-800 dark:text-gray-200">Bayangan Halus pada Foto</p>
+                                <p class="text-[11px] text-gray-500">Memberi efek kedalaman pada tiap kotak</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="toggle-shadow" class="sr-only peer" onchange="updateStyleSetting('shadow', this.checked)">
+                                <div class="w-10 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Global Filter Section -->
+                    <div class="pt-3 border-t border-gray-200 dark:border-gray-800 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Filter Global (Semua Foto)</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2" id="globalFiltersGrid">
+                            <!-- Generated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: BACKGROUND -->
+                <div id="panel-bg" class="tool-panel hidden space-y-5">
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Latar Belakang Kanvas</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pilih warna solid atau gradien estetik</p>
+                    </div>
+
+                    <!-- Custom Color Picker -->
+                    <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700">
+                        <span class="text-xs font-medium">Warna Bebas (Custom)</span>
+                        <div class="flex items-center gap-2">
+                            <span id="bgHexLabel" class="text-xs font-mono text-gray-500 uppercase">#FFFFFF</span>
+                            <input type="color" id="bgColorPicker" value="#ffffff" oninput="setSolidBackground(this.value)" class="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent">
+                        </div>
+                    </div>
+
+                    <!-- Aesthetic Solid Colors -->
+                    <div class="space-y-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Warna Solid Estetik</span>
+                        <div id="solidPaletteGrid" class="grid grid-cols-6 gap-2">
+                            <!-- Generated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Gradients -->
+                    <div class="space-y-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Gradien Modern</span>
+                        <div id="gradientPaletteGrid" class="grid grid-cols-3 gap-2">
+                            <!-- Generated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: TEXT & STICKERS -->
+                <div id="panel-decor" class="tool-panel hidden space-y-5">
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Teks & Stiker Dekorasi</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Tambahkan judul, tanggal, atau stiker ke atas kolase</p>
+                    </div>
+
+                    <!-- Add Text Input -->
+                    <div class="p-3.5 rounded-2xl bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 space-y-3">
+                        <input type="text" id="newTextInput" placeholder="Ketik teks di sini..." value="Kenangan Indah ✨" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm focus:outline-none focus:border-indigo-500">
+                        
+                        <div class="grid grid-cols-2 gap-2">
+                            <select id="newTextFont" class="px-2.5 py-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs focus:outline-none">
+                                <option value="Inter">Modern (Inter)</option>
+                                <option value="Playfair Display">Elegan (Playfair)</option>
+                                <option value="Pacifico">Tulisan Tangan</option>
+                                <option value="Oswald">Tebal (Oswald)</option>
+                                <option value="Montserrat">Geometris</option>
+                            </select>
+                            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700">
+                                <span class="text-xs text-gray-500">Warna</span>
+                                <input type="color" id="newTextColor" value="#ffffff" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent ml-auto">
+                            </div>
+                        </div>
+
+                        <button onclick="addTextLayer()" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Teks ke Kanvas
+                        </button>
+                    </div>
+
+                    <!-- Active Selected Layer Controls -->
+                    <div id="selectedOverlayControls" class="hidden p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-indigo-400">Edit Elemen Terpilih</span>
+                            <button onclick="deleteSelectedOverlay()" class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus
+                            </button>
+                        </div>
+                        <div id="overlayTextEditWrapper">
+                            <input type="text" id="editOverlayTextInput" oninput="updateSelectedOverlayText(this.value)" class="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px]">
+                                <span>Ukuran Elemen</span>
+                                <span id="val-overlay-size">48 px</span>
+                            </div>
+                            <input type="range" id="slider-overlay-size" min="16" max="220" value="48" class="w-full" oninput="updateSelectedOverlaySize(this.value)">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px]">Warna Teks</span>
+                            <input type="color" id="editOverlayColor" oninput="updateSelectedOverlayColor(this.value)" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent">
+                        </div>
+                    </div>
+
+                    <!-- Stickers / Emojis Grid -->
+                    <div class="space-y-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Stiker & Emoji Populer</span>
+                        <div class="grid grid-cols-5 gap-2 text-2xl" id="stickersGrid">
+                            <!-- Generated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- Center Interactive Canvas Area -->
+        <main id="workspaceArea" class="order-1 md:order-2 flex-1 bg-gray-100 dark:bg-gray-950 relative flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden select-none"
+              ondragover="handleWorkspaceDragOver(event)" ondragleave="handleWorkspaceDragLeave(event)" ondrop="handleWorkspaceDrop(event)">
+            
+            <!-- Drag & Drop Overlay Indicator -->
+            <div id="dropZoneOverlay" class="hidden absolute inset-4 rounded-3xl border-2 border-dashed border-indigo-500 bg-indigo-500/10 backdrop-blur-xs z-40 flex flex-col items-center justify-center pointer-events-none">
+                <div class="w-16 h-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center mb-3 shadow-xl">
+                    <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+                </div>
+                <p class="text-lg font-bold text-indigo-400">Lepaskan Foto di Sini</p>
+                <p class="text-xs text-gray-400 mt-1">Foto akan otomatis mengisi slot kolase yang tersedia</p>
+            </div>
+
+            <!-- Canvas Dimensions Badge -->
+            <div class="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border border-gray-200 dark:border-gray-800 text-xs font-medium shadow-xs">
+                <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-indigo-500"></i>
+                <span id="canvasDimensionBadge">1080 × 1080 px (1:1)</span>
+            </div>
+
+            <!-- Swap Mode Banner -->
+            <div id="swapModeBanner" class="hidden absolute top-3 right-3 sm:top-4 sm:right-4 z-30 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500 text-gray-950 text-xs font-bold shadow-lg animate-pulse">
+                <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i>
+                <span>Klik kotak foto tujuan untuk menukar</span>
+                <button onclick="cancelSwapMode()" class="ml-1 underline">Batal</button>
+            </div>
+
+            <!-- Interactive Collage Viewport Container -->
+            <div id="canvasWrapper" class="relative shadow-2xl transition-all duration-150 overflow-hidden bg-white" style="width: 400px; height: 400px;">
+                <!-- Background Layer -->
+                <div id="collageBackground" class="absolute inset-0 w-full h-full pointer-events-none" style="background: #ffffff;"></div>
+                
+                <!-- Photo Slots Layer -->
+                <div id="collageSlotsContainer" class="absolute inset-0 w-full h-full"></div>
+
+                <!-- Text & Stickers Overlay Layer -->
+                <div id="collageOverlaysContainer" class="absolute inset-0 w-full h-full pointer-events-none"></div>
+            </div>
+
+            <!-- Floating Slot Context Toolbar (Appears when a photo slot is selected) -->
+            <div id="slotToolbar" class="hidden absolute bottom-3 sm:bottom-5 z-30 max-w-[95vw] overflow-x-auto flex items-center gap-1 sm:gap-1.5 px-3 py-2 rounded-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-2xl">
+                <button onclick="triggerSingleSlotUpload()" title="Ganti Foto" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-xs font-medium shrink-0">
+                    <i data-lucide="image" class="w-4 h-4 text-indigo-500"></i>
+                    <span class="hidden sm:inline">Ganti</span>
+                </button>
+                <div class="h-5 w-px bg-gray-200 dark:bg-gray-700"></div>
+
+                <!-- Zoom Controls -->
+                <button onclick="adjustSlotZoom(-0.15)" title="Perkecil Foto" class="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0">
+                    <i data-lucide="zoom-out" class="w-4 h-4"></i>
+                </button>
+                <span id="slotZoomLabel" class="text-[11px] font-mono w-10 text-center shrink-0">100%</span>
+                <button onclick="adjustSlotZoom(0.15)" title="Perbesar Foto" class="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0">
+                    <i data-lucide="zoom-in" class="w-4 h-4"></i>
+                </button>
+
+                <div class="h-5 w-px bg-gray-200 dark:bg-gray-700"></div>
+
+                <!-- Rotate & Flip -->
+                <button onclick="rotateSelectedSlot()" title="Putar 90°" class="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0">
+                    <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+                </button>
+                <button onclick="flipSelectedSlot('h')" title="Balik Horizontal" class="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0">
+                    <i data-lucide="flip-horizontal" class="w-4 h-4"></i>
+                </button>
+                <button onclick="flipSelectedSlot('v')" title="Balik Vertikal" class="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0">
+                    <i data-lucide="flip-vertical" class="w-4 h-4"></i>
+                </button>
+
+                <div class="h-5 w-px bg-gray-200 dark:bg-gray-700"></div>
+
+                <!-- Per-Slot Filter -->
+                <select id="slotFilterSelect" onchange="changeSlotFilter(this.value)" title="Filter Foto Ini" class="px-2 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-medium focus:outline-none shrink-0">
+                    <option value="none">Normal</option>
+                    <option value="grayscale(100%)">Hitam Putih</option>
+                    <option value="sepia(80%)">Sepia</option>
+                    <option value="contrast(125%) saturate(130%)">Cerah Tajam</option>
+                    <option value="sepia(30%) contrast(110%) brightness(105%)">Vintage</option>
+                    <option value="brightness(115%)">Terang</option>
+                </select>
+
+                <!-- Swap & Delete -->
+                <button onclick="startSwapMode()" title="Tukar Posisi dengan Kotak Lain" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-medium shrink-0">
+                    <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Tukar</span>
+                </button>
+                <button onclick="removeSlotPhoto()" title="Hapus Foto dari Kotak" class="p-1.5 rounded-xl hover:bg-red-500/20 text-red-500 shrink-0">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-500/15 text-indigo-500 flex items-center justify-center">
+                        <i data-lucide="download" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base">Unduh Kolase Foto</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Simpan dalam resolusi penuh</p>
+                    </div>
+                </div>
+                <button onclick="closeExportModal()" class="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Resolution Summary -->
+                <div class="p-3.5 rounded-2xl bg-gray-100 dark:bg-gray-800/80 flex items-center justify-between text-xs">
+                    <span class="text-gray-500 dark:text-gray-400">Resolusi Output:</span>
+                    <span id="exportResSummary" class="font-bold text-indigo-500">1080 × 1080 piksel</span>
+                </div>
+
+                <!-- File Name -->
+                <div>
+                    <label class="block text-xs font-medium mb-1.5">Nama File</label>
+                    <input type="text" id="exportFileName" value="kolase-foto-saya" class="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <!-- Format Selection -->
+                <div>
+                    <label class="block text-xs font-medium mb-1.5">Format Gambar</label>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <button type="button" onclick="selectExportFormat('png')" id="fmt-btn-png" class="py-2.5 px-3 rounded-xl border-2 border-indigo-600 bg-indigo-600/10 text-indigo-500 font-semibold text-xs text-center">
+                            PNG (Kualitas Tanpa Kompresi)
+                        </button>
+                        <button type="button" onclick="selectExportFormat('jpeg')" id="fmt-btn-jpeg" class="py-2.5 px-3 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-semibold text-xs text-center">
+                            JPG (Ukuran File Ringan)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- JPG Quality Slider -->
+                <div id="jpgQualityContainer" class="hidden space-y-1.5">
+                    <div class="flex justify-between text-xs">
+                        <span>Kualitas JPG</span>
+                        <span id="exportQualityVal" class="font-semibold text-indigo-500">92%</span>
+                    </div>
+                    <input type="range" id="exportQualitySlider" min="50" max="100" value="92" class="w-full" oninput="document.getElementById('exportQualityVal').innerText = this.value + '%'">
+                </div>
+            </div>
+
+            <div class="flex gap-2.5 pt-2">
+                <button onclick="closeExportModal()" class="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xs font-semibold transition">
+                    Batal
+                </button>
+                <button onclick="executeDownload()" id="btnConfirmDownload" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-1.5 transition">
+                    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                    <span>Simpan Sekarang</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-semibold shadow-2xl">
+            <i data-lucide="info" class="w-4 h-4 text-indigo-400 dark:text-indigo-600"></i>
+            <span id="toastMessage">Pesan notifikasi</span>
+        </div>
+    </div>
+
+    <!-- Offscreen Canvas for High-Resolution Rendering -->
+    <canvas id="renderCanvas" class="hidden"></canvas>
+
+    <script>
+        // ==========================================
+        // 1. DATA DEFINISI: PRESETS, LAYOUTS, WARNA
+        // ==========================================
+
+        const SIZE_PRESETS = [
+            { name: 'Album Wedding 8×10 Inci (Potret)', ratio: '4:5', w: 2400, h: 3000, icon: 'book-open' },
+            { name: 'Album Wedding 12×12 Inci (Persegi)', ratio: '1:1', w: 3600, h: 3600, icon: 'square' },
+            { name: 'Album Wedding 10×8 Inci (Lanskap)', ratio: '5:4', w: 3000, h: 2400, icon: 'rectangle-horizontal' },
+            { name: 'Instagram Post (Persegi)', ratio: '1:1', w: 1080, h: 1080, icon: 'instagram' },
+            { name: 'Instagram Portrait Feed', ratio: '4:5', w: 1080, h: 1350, icon: 'rectangle-vertical' },
+            { name: 'Instagram Story / Reels / TikTok', ratio: '9:16', w: 1080, h: 1920, icon: 'smartphone' },
+            { name: 'Cetak Foto Standar (4R)', ratio: '2:3', w: 1200, h: 1800, icon: 'image' },
+            { name: 'Kertas A4 Portrait (300 DPI)', ratio: 'A4', w: 2480, h: 3508, icon: 'file-text' }
+        ];
+
+        // 32 Variasi Layout Asimetris, Editorial Album & Mosaik Dinamis [x, y, w, h] (0 - 100)
+        const COLLAGE_LAYOUTS = [
+            // --- 10 TEMPLATE EDITORIAL ALBUM (SESUAI REFERENSI 5 POTRET 8x10 + 5 PERSEGI 12x12) ---
+            {
+                id: 'ed-p1', category: 'editorial', count: 6, name: 'Editorial Album 01',
+                slots: [
+                    [0, 0, 62, 34], [62, 0, 38, 17], [62, 17, 38, 17],
+                    [0, 34, 32, 33], [32, 34, 34, 33], [66, 34, 34, 66],
+                    [0, 67, 33, 33], [33, 67, 33, 33]
+                ].slice(0, 8) // 8 foto staggered
+            },
+            {
+                id: 'ed-p1-exact', category: 'editorial', count: 8, name: 'Album Staggered 8',
+                slots: [
+                    [0, 0, 62, 34], [62, 0, 38, 17], [62, 17, 38, 17],
+                    [0, 34, 32, 33], [32, 34, 34, 33], [66, 34, 34, 66],
+                    [0, 67, 33, 33], [33, 67, 33, 33]
+                ]
+            },
+            {
+                id: 'ed-p2', category: 'editorial', count: 8, name: 'Album Editorial 02',
+                slots: [
+                    [0, 0, 36, 46], [36, 0, 64, 24], [36, 24, 32, 22], [68, 24, 32, 22],
+                    [0, 46, 26, 24], [26, 46, 30, 24], [56, 46, 44, 54],
+                    [0, 70, 56, 30]
+                ]
+            },
+            {
+                id: 'ed-p3', category: 'editorial', count: 7, name: 'Album Editorial 03',
+                slots: [
+                    [0, 0, 30, 34], [30, 0, 70, 34],
+                    [0, 34, 22, 36], [22, 34, 48, 36], [70, 34, 30, 36],
+                    [0, 70, 62, 30], [62, 70, 38, 30]
+                ]
+            },
+            {
+                id: 'ed-p4', category: 'editorial', count: 6, name: 'Album Editorial 04',
+                slots: [
+                    [0, 0, 33.33, 56], [33.33, 0, 33.34, 28], [66.67, 0, 33.33, 56],
+                    [33.33, 28, 33.34, 28],
+                    [0, 56, 100, 44]
+                ]
+            },
+            {
+                id: 'ed-p5', category: 'editorial', count: 8, name: 'Album Editorial 05',
+                slots: [
+                    [0, 0, 33.33, 38], [33.33, 0, 33.34, 28], [66.67, 0, 33.33, 38],
+                    [0, 38, 33.33, 36], [33.33, 28, 66.67, 46],
+                    [0, 74, 50, 26], [50, 74, 50, 26]
+                ]
+            },
+            {
+                id: 'ed-s1', category: 'editorial', count: 6, name: 'Square Mosaic 06',
+                slots: [
+                    [0, 0, 56, 56], [56, 0, 44, 28], [56, 28, 44, 28],
+                    [0, 56, 33.33, 44], [33.33, 56, 33.34, 44], [66.67, 56, 33.33, 44]
+                ]
+            },
+            {
+                id: 'ed-s2', category: 'editorial', count: 4, name: 'Square Hero 07',
+                slots: [
+                    [0, 0, 100, 62],
+                    [0, 62, 33.33, 38], [33.33, 62, 33.34, 38], [66.67, 62, 33.33, 38]
+                ]
+            },
+            {
+                id: 'ed-s3', category: 'editorial', count: 9, name: 'Square Gallery 08',
+                slots: [
+                    [0, 0, 24, 34], [24, 0, 52, 66], [76, 0, 24, 25],
+                    [0, 34, 24, 32], [76, 25, 24, 22], [76, 47, 24, 19],
+                    [0, 66, 34, 34], [34, 66, 66, 34]
+                ]
+            },
+            {
+                id: 'ed-s4', category: 'editorial', count: 4, name: 'Square Asymmetric 09',
+                slots: [
+                    [0, 0, 50, 64], [50, 0, 50, 52],
+                    [0, 64, 50, 36], [50, 52, 50, 48]
+                ]
+            },
+            {
+                id: 'ed-s5', category: 'editorial', count: 4, name: 'Square Split 10',
+                slots: [
+                    [0, 0, 38, 48], [38, 0, 62, 36],
+                    [0, 48, 38, 52], [38, 36, 62, 64]
+                ]
+            },
+
+            // --- VARIASI 2 - 3 FOTO ASIMETRIS ---
+            { id: '2-asym-v', count: 2, name: '2 Kolom 65/35', slots: [[0, 0, 65, 100], [65, 0, 35, 100]] },
+            { id: '2-asym-h', count: 2, name: '2 Baris 65/35', slots: [[0, 0, 100, 65], [0, 65, 100, 35]] },
+            { id: '3-left-big', count: 3, name: '1 Besar + 2 Kanan', slots: [[0, 0, 62, 100], [62, 0, 38, 50], [62, 50, 38, 50]] },
+            { id: '3-right-big', count: 3, name: '2 Kiri + 1 Besar', slots: [[0, 0, 38, 50], [0, 50, 38, 50], [38, 0, 62, 100]] },
+            { id: '3-staggered', count: 3, name: '3 Bento Dinamis', slots: [[0, 0, 55, 62], [55, 0, 45, 100], [0, 62, 55, 38]] },
+
+            // --- VARIASI 4 - 5 FOTO ASIMETRIS ---
+            { id: '4-left-big', count: 4, name: '1 Utama + 3 Sisi', slots: [[0, 0, 65, 100], [65, 0, 35, 33.33], [65, 33.33, 35, 33.34], [65, 66.67, 35, 33.33]] },
+            { id: '4-bento-mix', count: 4, name: '4 Bento Asimetris', slots: [[0, 0, 60, 55], [60, 0, 40, 40], [0, 55, 40, 45], [40, 40, 60, 60]] },
+            { id: '5-center-big', count: 5, name: '1 Tengah + 4 Sudut', slots: [[25, 0, 50, 100], [0, 0, 25, 50], [0, 50, 25, 50], [75, 0, 25, 50], [75, 50, 25, 50]] },
+            { id: '5-magazine', count: 5, name: '5 Majalah Editorial', slots: [[0, 0, 54, 62], [54, 0, 46, 34], [54, 34, 46, 28], [0, 62, 38, 38], [38, 62, 62, 38]] },
+            { id: '5-left1-right4', count: 5, name: '1 Kiri + 4 Grid', slots: [[0, 0, 50, 100], [50, 0, 25, 50], [75, 0, 25, 50], [50, 50, 25, 50], [75, 50, 25, 50]] },
+
+            // --- VARIASI 6 - 7 FOTO ASIMETRIS ---
+            { id: '6-big-corner', count: 6, name: '1 Hero + 5 Sisi', slots: [[0, 0, 66.67, 66.67], [66.67, 0, 33.33, 33.33], [66.67, 33.33, 33.33, 33.34], [0, 66.67, 33.33, 33.33], [33.33, 66.67, 33.34, 33.33], [66.67, 66.67, 33.33, 33.33]] },
+            { id: '6-staggered', count: 6, name: '6 Staggered Grid', slots: [[0, 0, 45, 55], [45, 0, 55, 38], [0, 55, 30, 45], [30, 55, 35, 45], [45, 38, 20, 17], [65, 38, 35, 62]] },
+            { id: '7-wedding', count: 7, name: '7 Wedding Mosaik', slots: [[0, 0, 50, 58], [50, 0, 25, 29], [75, 0, 25, 29], [50, 29, 50, 29], [0, 58, 33.33, 42], [33.33, 58, 33.34, 42], [66.67, 58, 33.33, 42]] },
+            { id: '7-mix', count: 7, name: '2 Atas + 5 Strip', slots: [[0, 0, 50, 55], [50, 0, 50, 55], [0, 55, 20, 45], [20, 55, 20, 45], [40, 55, 20, 45], [60, 55, 20, 45], [80, 55, 20, 45]] },
+
+            // --- VARIASI 8 - 10+ FOTO ASIMETRIS ---
+            { id: '8-editorial', count: 8, name: '8 Editorial Mix', slots: [[0, 0, 40, 50], [40, 0, 30, 25], [70, 0, 30, 50], [40, 25, 30, 25], [0, 50, 25, 50], [25, 50, 45, 50], [70, 50, 30, 25], [70, 75, 30, 25]] },
+            { id: '9-hero-center', count: 9, name: '9 Hero Tengah', slots: [[25, 25, 50, 50], [0, 0, 33.33, 25], [33.33, 0, 33.34, 25], [66.67, 0, 33.33, 25], [0, 25, 25, 50], [75, 25, 25, 50], [0, 75, 33.33, 25], [33.33, 75, 33.34, 25], [66.67, 75, 33.33, 25]] },
+            { id: '9-grid', count: 9, name: 'Grid 3×3 Klasik', slots: [[0, 0, 33.33, 33.33], [33.33, 0, 33.34, 33.33], [66.67, 0, 33.33, 33.33], [0, 33.33, 33.33, 33.34], [33.33, 33.33, 33.34, 33.34], [66.67, 33.33, 33.33, 33.34], [0, 66.67, 33.33, 33.33], [33.33, 66.67, 33.34, 33.33], [66.67, 66.67, 33.33, 33.33]] },
+            { id: '10-mosaic', count: 10, name: '10 Mosaik Lengkap', slots: [[0, 0, 40, 42], [40, 0, 30, 21], [70, 0, 30, 21], [40, 21, 60, 21], [0, 42, 25, 30], [25, 42, 50, 30], [75, 42, 25, 58], [0, 72, 37.5, 28], [37.5, 72, 37.5, 28]] }
+        ];
+
+        const SOLID_COLORS = [
+            '#ffffff', '#f8fafc', '#f3f4f6', '#e5e7eb', '#1f2937', '#09090b',
+            '#fef2f2', '#fee2e2', '#fecaca', '#f87171', '#ef4444', '#991b1b',
+            '#fffbeb', '#fef3c7', '#fde68a', '#fbbf24', '#d97706', '#78350f',
+            '#ecfdf5', '#d1fae5', '#a7f3d0', '#34d399', '#059669', '#064e3b',
+            '#eff6ff', '#dbeafe', '#bfdbfe', '#60a5fa', '#2563eb', '#1e3a8a',
+            '#f5f3ff', '#ede9fe', '#ddd6fe', '#a78bfa', '#7c3aed', '#4c1d95'
+        ];
+
+        const GRADIENTS = [
+            { name: 'Senja', css: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)', colors: ['#f6d365', '#fda085'] },
+            { name: 'Lavender', css: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)', colors: ['#a18cd1', '#fbc2eb'] },
+            { name: 'Samudra', css: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)', colors: ['#84fab0', '#8fd3f4'] },
+            { name: 'Aurora', css: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', colors: ['#667eea', '#764ba2'] },
+            { name: 'Peach', css: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', colors: ['#ff9a9e', '#fecfef'] },
+            { name: 'Malam', css: 'linear-gradient(135deg, #0f172a 0%, #312e81 100%)', colors: ['#0f172a', '#312e81'] },
+            { name: 'Mint', css: 'linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)', colors: ['#d4fc79', '#96e6a1'] },
+            { name: 'Mawar', css: 'linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%)', colors: ['#ff758c', '#ff7eb3'] },
+            { name: 'Emas', css: 'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)', colors: ['#f7971e', '#ffd200'] }
+        ];
+
+        const GLOBAL_FILTERS = [
+            { name: 'Normal', value: 'none' },
+            { name: 'B&W', value: 'grayscale(100%)' },
+            { name: 'Sepia', value: 'sepia(80%)' },
+            { name: 'Vintage', value: 'sepia(35%) contrast(110%) brightness(105%)' },
+            { name: 'Vivid', value: 'contrast(120%) saturate(135%)' },
+            { name: 'Cerah', value: 'brightness(115%) contrast(105%)' }
+        ];
+
+        const STICKERS = ['❤️', '✨', '🔥', '🎉', '🌸', '☀️', '🌈', '🦋', '📸', '🥂', '🎂', '✈️', '🌴', '⭐', '💖', '🥰', '👑', '🎈', '🍀', '🎵'];
+
+        // ==========================================
+        // 2. STATE APLIKASI UTAMA
+        // ==========================================
+        const state = {
+            width: 2400,
+            height: 3000,
+            layoutId: 'ed-p1-exact',
+            customLayoutSlots: null, // Menyimpan koordinat dari generator dinamis
+            gap: 8,
+            padding: 12,
+            radius: 0,
+            borderWidth: 0,
+            borderColor: '#ffffff',
+            tilt: 0,
+            shadow: false,
+            globalFilter: 'none',
+            bgType: 'solid', // 'solid' | 'gradient'
+            bgColor: '#ffffff',
+            bgGradient: GRADIENTS[0],
+            // Array foto tersimpan berdasarkan index slot
+            slots: [],
+            selectedSlotIndex: null,
+            targetUploadSlotIndex: null,
+            swapSourceIndex: null,
+            // Overlays (Teks & Stiker)
+            overlays: [],
+            selectedOverlayId: null,
+            exportFormat: 'png'
+        };
+
+        // ==========================================
+        // 3. INISIALISASI UI & EVENT LISTENERS
+        // ==========================================
+        window.onload = () => {
+            lucide.createIcons();
+            initUILists();
+            document.getElementById('customWidthInput').value = state.width;
+            document.getElementById('customHeightInput').value = state.height;
+            updateDimensionBadge('4:5 Album');
+            setLayout('ed-p1-exact');
+            fitCanvasToViewport();
+            window.addEventListener('resize', fitCanvasToViewport);
+
+            // Deselect when clicking outside canvas wrapper
+            document.getElementById('workspaceArea').addEventListener('mousedown', (e) => {
+                if (e.target.id === 'workspaceArea') {
+                    deselectAll();
+                }
+            });
+        };
+
+        function initUILists() {
+            // Render Layout Thumbnails
+            renderLayoutsGrid('all');
+
+            // Render Size Presets
+            const presetsContainer = document.getElementById('sizePresetsList');
+            presetsContainer.innerHTML = SIZE_PRESETS.map((p, idx) => `
+                <button onclick="applyPresetSize(${p.w}, ${p.h}, '${p.ratio}')" class="flex items-center justify-between p-3 rounded-xl bg-gray-100/80 hover:bg-indigo-500/10 dark:bg-gray-800/70 dark:hover:bg-indigo-500/20 border border-gray-200 dark:border-gray-700/80 hover:border-indigo-500/50 transition text-left group">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="${p.icon}" class="w-4 h-4 text-gray-500 group-hover:text-indigo-500"></i>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-800 dark:text-gray-200">${p.name}</p>
+                            <p class="text-[11px] text-gray-500">${p.w} × ${p.h} px</p>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-white dark:bg-gray-900 text-[11px] font-bold text-indigo-500 border border-gray-200 dark:border-gray-700">${p.ratio}</span>
+                </button>
+            `).join('');
+
+            // Render Solid Colors
+            const solidContainer = document.getElementById('solidPaletteGrid');
+            solidContainer.innerHTML = SOLID_COLORS.map(hex => `
+                <button onclick="setSolidBackground('${hex}')" class="w-full aspect-square rounded-xl border border-gray-300 dark:border-gray-700 shadow-xs hover:scale-110 transition" style="background-color: ${hex};" title="${hex}"></button>
+            `).join('');
+
+            // Render Gradients
+            const gradContainer = document.getElementById('gradientPaletteGrid');
+            gradContainer.innerHTML = GRADIENTS.map((g, idx) => `
+                <button onclick="setGradientBackground(${idx})" class="h-12 rounded-xl border border-gray-300 dark:border-gray-700 shadow-xs hover:scale-105 transition flex items-end p-1.5" style="background: ${g.css};">
+                    <span class="text-[10px] font-bold text-white drop-shadow-md">${g.name}</span>
+                </button>
+            `).join('');
+
+            // Render Global Filters
+            const filterContainer = document.getElementById('globalFiltersGrid');
+            filterContainer.innerHTML = GLOBAL_FILTERS.map(f => `
+                <button onclick="setGlobalFilter('${f.value}', this)" class="global-filter-btn py-2 px-2 rounded-xl border ${f.value === 'none' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500' : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800'} text-xs font-medium transition">
+                    ${f.name}
+                </button>
+            `).join('');
+
+            // Render Stickers
+            const stickerContainer = document.getElementById('stickersGrid');
+            stickerContainer.innerHTML = STICKERS.map(emoji => `
+                <button onclick="addStickerLayer('${emoji}')" class="aspect-square rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 flex items-center justify-center hover:scale-110 transition">
+                    ${emoji}
+                </button>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // 4. NAVIGASI TAB & TEMA
+        // ==========================================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tool-panel').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`panel-${tabName}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+                btn.classList.add('text-gray-600', 'dark:text-gray-400', 'hover:bg-gray-200/70', 'dark:hover:bg-gray-800');
+            });
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+            activeBtn.classList.remove('text-gray-600', 'dark:text-gray-400', 'hover:bg-gray-200/70', 'dark:hover:bg-gray-800');
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2800);
+        }
+
+        // ==========================================
+        // 5. MANAJEMEN LAYOUT & UKURAN KANVAS
+        // ==========================================
+        function filterLayouts(count) {
+            document.querySelectorAll('.count-filter-btn').forEach(btn => {
+                const isMatch = String(btn.dataset.count) === String(count);
+                btn.className = isMatch
+                    ? 'count-filter-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-600 text-white'
+                    : (btn.dataset.count === 'editorial'
+                        ? 'count-filter-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
+                        : 'count-filter-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700');
+            });
+            renderLayoutsGrid(count);
+        }
+
+        function renderLayoutsGrid(filterCount) {
+            const container = document.getElementById('layoutsGrid');
+            const filtered = COLLAGE_LAYOUTS.filter(l => {
+                if (filterCount === 'all') return true;
+                if (filterCount === 'editorial') return l.category === 'editorial';
+                if (filterCount === 2) return l.count >= 2 && l.count <= 3;
+                if (filterCount === 4) return l.count >= 4 && l.count <= 5;
+                if (filterCount === 6) return l.count >= 6 && l.count <= 7;
+                if (filterCount === '8+') return l.count >= 8;
+                return l.count === filterCount;
+            });
+
+            container.innerHTML = filtered.map(layout => {
+                const isSelected = layout.id === state.layoutId && !state.customLayoutSlots;
+                const miniBoxes = layout.slots.map(s => `
+                    <div class="absolute bg-indigo-500/35 dark:bg-indigo-400/35 border border-indigo-600 dark:border-indigo-400 rounded-[1px]"
+                         style="left: calc(${s[0]}% + 0.5px); top: calc(${s[1]}% + 0.5px); width: calc(${s[2]}% - 1px); height: calc(${s[3]}% - 1px);"></div>
+                `).join('');
+
+                return `
+                    <button onclick="setLayout('${layout.id}')" class="flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition ${isSelected ? 'border-indigo-500 bg-indigo-500/10' : 'border-gray-200 dark:border-gray-800 hover:border-indigo-400/50 bg-gray-50 dark:bg-gray-800/50'}">
+                        <div class="w-full aspect-[4/5] relative bg-white dark:bg-gray-900 rounded-sm overflow-hidden p-0.5 shadow-2xs">
+                            ${miniBoxes}
+                        </div>
+                        <span class="text-[10px] font-medium text-center leading-tight line-clamp-1">${layout.name}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // Generator Tata Letak Asimetris Dinamis (Algoritma Binary Space Partitioning)
+        function generateDynamicLayout() {
+            const targetCount = parseInt(document.getElementById('dynamicSlotCount')?.value || 6);
+            let rects = [[0, 0, 100, 100]];
+
+            while (rects.length < targetCount) {
+                // Pilih kotak dengan area terbesar untuk dipecah secara asimetris
+                rects.sort((a, b) => (b[2] * b[3]) - (a[2] * a[3]));
+                const [x, y, w, h] = rects.shift();
+
+                // Tentukan arah belahan (vertikal atau horizontal) berdasarkan proporsi kotak
+                const splitVertically = w > h ? Math.random() < 0.78 : Math.random() < 0.22;
+                // Rasio belahan tidak kaku (antara 32% sampai 68%)
+                const ratio = +(0.32 + Math.random() * 0.36).toFixed(2);
+
+                if (splitVertically) {
+                    const w1 = +(w * ratio).toFixed(2);
+                    const w2 = +(w - w1).toFixed(2);
+                    rects.push([x, y, w1, h], [+(x + w1).toFixed(2), y, w2, h]);
+                } else {
+                    const h1 = +(h * ratio).toFixed(2);
+                    const h2 = +(h - h1).toFixed(2);
+                    rects.push([x, y, w, h1], [x, +(y + h1).toFixed(2), w, h2]);
+                }
+            }
+
+            // Urutkan dari atas ke bawah, kiri ke kanan
+            rects.sort((a, b) => (Math.abs(a[1] - b[1]) > 5 ? a[1] - b[1] : a[0] - b[0]));
+
+            state.customLayoutSlots = rects;
+            state.layoutId = 'custom-dynamic';
+            applySlotsArray(rects);
+            renderLayoutsGrid(document.querySelector('.count-filter-btn.bg-indigo-600')?.dataset.count || 'all');
+            showToast(`Susunan asimetris ${targetCount} foto baru dibuat!`);
+        }
+
+        function setLayout(layoutId) {
+            const layout = COLLAGE_LAYOUTS.find(l => l.id === layoutId);
+            if (!layout) return;
+
+            state.layoutId = layoutId;
+            state.customLayoutSlots = null;
+            applySlotsArray(layout.slots);
+            renderLayoutsGrid(document.querySelector('.count-filter-btn.bg-indigo-600')?.dataset.count || 'all');
+        }
+
+        function applySlotsArray(slotCoords) {
+            const existingPhotos = state.slots.filter(s => s && s.img);
+
+            state.slots = slotCoords.map((_, index) => {
+                // Sudut kemiringan acak ringan (-1 sampai +1 pengali) untuk mode scrapbook
+                const randAngle = +((Math.random() * 2 - 1)).toFixed(2);
+                if (existingPhotos[index]) {
+                    return { ...existingPhotos[index], panX: 0, panY: 0, zoom: 1, tiltFactor: existingPhotos[index].tiltFactor ?? randAngle };
+                }
+                return {
+                    img: null,
+                    panX: 0,
+                    panY: 0,
+                    zoom: 1,
+                    rotate: 0,
+                    flipH: 1,
+                    flipV: 1,
+                    filter: 'none',
+                    tiltFactor: randAngle
+                };
+            });
+
+            state.selectedSlotIndex = null;
+            updateSlotToolbar();
+            renderCanvasDOM();
+        }
+
+        function applyPresetSize(w, h, ratioLabel) {
+            state.width = w;
+            state.height = h;
+            document.getElementById('customWidthInput').value = w;
+            document.getElementById('customHeightInput').value = h;
+            updateDimensionBadge(ratioLabel);
+            fitCanvasToViewport();
+            renderCanvasDOM();
+            showToast(`Ukuran kanvas diubah ke ${w} × ${h} px`);
+        }
+
+        function applyCustomDimensions() {
+            const w = Math.max(100, Math.min(6000, parseInt(document.getElementById('customWidthInput').value) || 1080));
+            const h = Math.max(100, Math.min(6000, parseInt(document.getElementById('customHeightInput').value) || 1080));
+            state.width = w;
+            state.height = h;
+            document.getElementById('customWidthInput').value = w;
+            document.getElementById('customHeightInput').value = h;
+            
+            // Hitung rasio sederhana
+            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+            const divisor = gcd(w, h);
+            const ratioStr = (w / divisor <= 20 && h / divisor <= 20) ? `${w/divisor}:${h/divisor}` : 'Kustom';
+            
+            updateDimensionBadge(ratioStr);
+            fitCanvasToViewport();
+            renderCanvasDOM();
+            showToast(`Ukuran kustom diterapkan: ${w} × ${h} px`);
+        }
+
+        function swapDimensions() {
+            const wInput = document.getElementById('customWidthInput');
+            const hInput = document.getElementById('customHeightInput');
+            const temp = wInput.value;
+            wInput.value = hInput.value;
+            hInput.value = temp;
+            applyCustomDimensions();
+        }
+
+        function updateDimensionBadge(ratioStr = '') {
+            const badge = document.getElementById('canvasDimensionBadge');
+            badge.innerText = `${state.width} × ${state.height} px ${ratioStr ? `(${ratioStr})` : ''}`;
+        }
+
+        // Menyesuaikan tampilan kanvas agar selalu pas di layar tanpa mengubah resolusi asli
+        function fitCanvasToViewport() {
+            const workspace = document.getElementById('workspaceArea');
+            const wrapper = document.getElementById('canvasWrapper');
+            if (!workspace || !wrapper) return;
+
+            const pad = window.innerWidth < 640 ? 48 : 96;
+            const availW = Math.max(150, workspace.clientWidth - pad);
+            const availH = Math.max(150, workspace.clientHeight - pad);
+
+            const scale = Math.min(availW / state.width, availH / state.height);
+            wrapper.style.width = `${Math.round(state.width * scale)}px`;
+            wrapper.style.height = `${Math.round(state.height * scale)}px`;
+            state.previewScale = scale;
+
+            renderCanvasDOM();
+        }
+
+        // ==========================================
+        // 6. KUSTOMISASI GAYA & LATAR BELAKANG
+        // ==========================================
+        function updateStyleSetting(key, value) {
+            if (key === 'shadow') {
+                state.shadow = value;
+            } else if (key === 'borderColor') {
+                state.borderColor = value;
+            } else {
+                state[key] = parseInt(value);
+                const unit = key === 'tilt' ? '°' : ' px';
+                const labelEl = document.getElementById(`val-${key}`);
+                if (labelEl) labelEl.innerText = `${value}${unit}`;
+            }
+            renderCanvasDOM();
+        }
+
+        function setSolidBackground(hex) {
+            state.bgType = 'solid';
+            state.bgColor = hex;
+            document.getElementById('bgColorPicker').value = hex;
+            document.getElementById('bgHexLabel').innerText = hex.toUpperCase();
+            document.getElementById('collageBackground').style.background = hex;
+        }
+
+        function setGradientBackground(idx) {
+            state.bgType = 'gradient';
+            state.bgGradient = GRADIENTS[idx];
+            document.getElementById('collageBackground').style.background = GRADIENTS[idx].css;
+        }
+
+        function setGlobalFilter(filterVal, btnEl) {
+            state.globalFilter = filterVal;
+            document.querySelectorAll('.global-filter-btn').forEach(b => {
+                b.className = 'global-filter-btn py-2 px-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-medium transition';
+            });
+            if (btnEl) {
+                btnEl.className = 'global-filter-btn py-2 px-2 rounded-xl border border-indigo-500 bg-indigo-500/10 text-indigo-500 text-xs font-medium transition';
+            }
+            renderCanvasDOM();
+        }
+
+        // ==========================================
+        // 7. UPLOAD & MANIPULASI FOTO DI DALAM SLOT
+        // ==========================================
+        function handleBulkUpload(event) {
+            const files = Array.from(event.target.files);
+            if (!files.length) return;
+            processUploadedFiles(files);
+            event.target.value = '';
+        }
+
+        function handleWorkspaceDragOver(e) {
+            e.preventDefault();
+            document.getElementById('dropZoneOverlay').classList.remove('hidden');
+        }
+
+        function handleWorkspaceDragLeave(e) {
+            if (e.target.id === 'workspaceArea') {
+                document.getElementById('dropZoneOverlay').classList.add('hidden');
+            }
+        }
+
+        function handleWorkspaceDrop(e) {
+            e.preventDefault();
+            document.getElementById('dropZoneOverlay').classList.add('hidden');
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            if (files.length) {
+                processUploadedFiles(files);
+            }
+        }
+
+        function processUploadedFiles(files) {
+            // Jika jumlah foto lebih banyak dari layout saat ini, otomatis pilihkan layout yang sesuai
+            if (files.length > state.slots.length) {
+                const matchingLayout = COLLAGE_LAYOUTS.find(l => l.count === Math.min(files.length, 9)) || COLLAGE_LAYOUTS[COLLAGE_LAYOUTS.length - 1];
+                setLayout(matchingLayout.id);
+            }
+
+            let fileIdx = 0;
+            // Isi slot yang kosong dulu
+            for (let i = 0; i < state.slots.length && fileIdx < files.length; i++) {
+                if (!state.slots[i].img) {
+                    loadImageToSlot(files[fileIdx++], i);
+                }
+            }
+            // Jika semua penuh, timpa dari awal
+            for (let i = 0; i < state.slots.length && fileIdx < files.length; i++) {
+                loadImageToSlot(files[fileIdx++], i);
+            }
+            showToast(`${files.length} foto berhasil dimuat!`);
+        }
+
+        function triggerSingleSlotUpload(slotIdx = state.selectedSlotIndex) {
+            if (slotIdx === null || slotIdx === undefined) return;
+            state.targetUploadSlotIndex = slotIdx;
+            document.getElementById('singleUploadInput').click();
+        }
+
+        function handleSingleSlotUpload(event) {
+            const file = event.target.files[0];
+            if (file && state.targetUploadSlotIndex !== null) {
+                loadImageToSlot(file, state.targetUploadSlotIndex);
+            }
+            event.target.value = '';
+        }
+
+        function loadImageToSlot(file, slotIndex) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.slots[slotIndex] = {
+                        img: img,
+                        src: e.target.result,
+                        panX: 0,
+                        panY: 0,
+                        zoom: 1,
+                        rotate: 0,
+                        flipH: 1,
+                        flipV: 1,
+                        filter: 'none'
+                    };
+                    state.selectedSlotIndex = slotIndex;
+                    updateSlotToolbar();
+                    renderCanvasDOM();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function shufflePhotos() {
+            const filledIndices = state.slots.map((s, i) => s.img ? i : -1).filter(i => i !== -1);
+            if (filledIndices.length < 2) {
+                showToast('Unggah minimal 2 foto untuk mengacak posisi');
+                return;
+            }
+            const photos = filledIndices.map(i => ({ ...state.slots[i], panX: 0, panY: 0 }));
+            for (let i = photos.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [photos[i], photos[j]] = [photos[j], photos[i]];
+            }
+            filledIndices.forEach((slotIdx, idx) => {
+                state.slots[slotIdx] = photos[idx];
+            });
+            renderCanvasDOM();
+            showToast('Posisi foto diacak!');
+        }
+
+        function clearAllSlots() {
+            state.slots.forEach(s => {
+                s.img = null;
+                s.src = null;
+                s.panX = 0;
+                s.panY = 0;
+                s.zoom = 1;
+                s.rotate = 0;
+                s.flipH = 1;
+                s.flipV = 1;
+                s.filter = 'none';
+            });
+            state.overlays = [];
+            deselectAll();
+            renderCanvasDOM();
+            showToast('Kanvas dibersihkan');
+        }
+
+        // Kontrol Slot Terpilih
+        function selectSlot(index) {
+            // Cek apakah sedang dalam mode tukar (Swap)
+            if (state.swapSourceIndex !== null && state.swapSourceIndex !== index) {
+                const temp = state.slots[state.swapSourceIndex];
+                state.slots[state.swapSourceIndex] = state.slots[index];
+                state.slots[index] = temp;
+                cancelSwapMode();
+                state.selectedSlotIndex = index;
+                updateSlotToolbar();
+                renderCanvasDOM();
+                showToast('Posisi foto berhasil ditukar!');
+                return;
+            }
+
+            state.selectedOverlayId = null;
+            document.getElementById('selectedOverlayControls').classList.add('hidden');
+            state.selectedSlotIndex = index;
+            updateSlotToolbar();
+            renderCanvasDOM();
+        }
+
+        function deselectAll() {
+            state.selectedSlotIndex = null;
+            state.selectedOverlayId = null;
+            cancelSwapMode();
+            updateSlotToolbar();
+            document.getElementById('selectedOverlayControls').classList.add('hidden');
+            renderCanvasDOM();
+        }
+
+        function updateSlotToolbar() {
+            const toolbar = document.getElementById('slotToolbar');
+            const idx = state.selectedSlotIndex;
+            if (idx === null || !state.slots[idx] || !state.slots[idx].img) {
+                toolbar.classList.add('hidden');
+                return;
+            }
+            const slot = state.slots[idx];
+            toolbar.classList.remove('hidden');
+            document.getElementById('slotZoomLabel').innerText = `${Math.round(slot.zoom * 100)}%`;
+            document.getElementById('slotFilterSelect').value = slot.filter || 'none';
+        }
+
+        function adjustSlotZoom(delta) {
+            const slot = state.slots[state.selectedSlotIndex];
+            if (!slot || !slot.img) return;
+            slot.zoom = Math.max(1, Math.min(3.5, +(slot.zoom + delta).toFixed(2)));
+            updateSlotToolbar();
+            renderCanvasDOM();
+        }
+
+        function rotateSelectedSlot() {
+            const slot = state.slots[state.selectedSlotIndex];
+            if (!slot || !slot.img) return;
+            slot.rotate = (slot.rotate + 90) % 360;
+            renderCanvasDOM();
+        }
+
+        function flipSelectedSlot(axis) {
+            const slot = state.slots[state.selectedSlotIndex];
+            if (!slot || !slot.img) return;
+            if (axis === 'h') slot.flipH *= -1;
+            if (axis === 'v') slot.flipV *= -1;
+            renderCanvasDOM();
+        }
+
+        function changeSlotFilter(val) {
+            const slot = state.slots[state.selectedSlotIndex];
+            if (!slot || !slot.img) return;
+            slot.filter = val;
+            renderCanvasDOM();
+        }
+
+        function removeSlotPhoto() {
+            const slot = state.slots[state.selectedSlotIndex];
+            if (!slot) return;
+            slot.img = null;
+            slot.src = null;
+            state.selectedSlotIndex = null;
+            updateSlotToolbar();
+            renderCanvasDOM();
+        }
+
+        function startSwapMode() {
+            if (state.selectedSlotIndex === null) return;
+            state.swapSourceIndex = state.selectedSlotIndex;
+            document.getElementById('swapModeBanner').classList.remove('hidden');
+        }
+
+        function cancelSwapMode() {
+            state.swapSourceIndex = null;
+            document.getElementById('swapModeBanner').classList.add('hidden');
+        }
+
+        // ==========================================
+        // 8. TEKS & STIKER OVERLAY
+        // ==========================================
+        function addTextLayer() {
+            const text = document.getElementById('newTextInput').value.trim();
+            if (!text) return;
+            const font = document.getElementById('newTextFont').value;
+            const color = document.getElementById('newTextColor').value;
+
+            const id = 'ov-' + Date.now();
+            state.overlays.push({
+                id,
+                type: 'text',
+                content: text,
+                font: font,
+                color: color,
+                size: Math.round(state.width * 0.055), // skala proporsional thd kanvas
+                x: 50, // persen tengah
+                y: 50
+            });
+            selectOverlay(id);
+            renderCanvasDOM();
+        }
+
+        function addStickerLayer(emoji) {
+            const id = 'ov-' + Date.now();
+            state.overlays.push({
+                id,
+                type: 'sticker',
+                content: emoji,
+                font: 'Inter',
+                color: '#ffffff',
+                size: Math.round(state.width * 0.09),
+                x: 50,
+                y: 50
+            });
+            selectOverlay(id);
+            renderCanvasDOM();
+        }
+
+        function selectOverlay(id) {
+            state.selectedSlotIndex = null;
+            updateSlotToolbar();
+            state.selectedOverlayId = id;
+
+            const ov = state.overlays.find(o => o.id === id);
+            const ctrlBox = document.getElementById('selectedOverlayControls');
+            if (!ov) {
+                ctrlBox.classList.add('hidden');
+                return;
+            }
+            ctrlBox.classList.remove('hidden');
+            document.getElementById('slider-overlay-size').value = ov.size;
+            document.getElementById('val-overlay-size').innerText = `${ov.size} px`;
+
+            const textEditWrap = document.getElementById('overlayTextEditWrapper');
+            if (ov.type === 'text') {
+                textEditWrap.classList.remove('hidden');
+                document.getElementById('editOverlayTextInput').value = ov.content;
+                document.getElementById('editOverlayColor').value = ov.color;
+            } else {
+                textEditWrap.classList.add('hidden');
+            }
+            renderCanvasDOM();
+        }
+
+        function updateSelectedOverlayText(val) {
+            const ov = state.overlays.find(o => o.id === state.selectedOverlayId);
+            if (ov) {
+                ov.content = val;
+                renderCanvasDOM();
+            }
+        }
+
+        function updateSelectedOverlaySize(val) {
+            const ov = state.overlays.find(o => o.id === state.selectedOverlayId);
+            if (ov) {
+                ov.size = parseInt(val);
+                document.getElementById('val-overlay-size').innerText = `${val} px`;
+                renderCanvasDOM();
+            }
+        }
+
+        function updateSelectedOverlayColor(val) {
+            const ov = state.overlays.find(o => o.id === state.selectedOverlayId);
+            if (ov) {
+                ov.color = val;
+                renderCanvasDOM();
+            }
+        }
+
+        function deleteSelectedOverlay() {
+            state.overlays = state.overlays.filter(o => o.id !== state.selectedOverlayId);
+            state.selectedOverlayId = null;
+            document.getElementById('selectedOverlayControls').classList.add('hidden');
+            renderCanvasDOM();
+        }
+
+        // ==========================================
+        // 9. RENDER PREVIEW DOM INTERAKTIF
+        // ==========================================
+        function getActiveLayoutSlots() {
+            if (state.customLayoutSlots) return state.customLayoutSlots;
+            const layout = COLLAGE_LAYOUTS.find(l => l.id === state.layoutId) || COLLAGE_LAYOUTS[0];
+            return layout.slots;
+        }
+
+        function getSlotRects(slotCoords, width, height, padding, gap) {
+            const innerW = Math.max(10, width - padding * 2);
+            const innerH = Math.max(10, height - padding * 2);
+
+            return slotCoords.map(([px, py, pw, ph]) => {
+                let x = padding + (px / 100) * innerW;
+                let y = padding + (py / 100) * innerH;
+                let w = (pw / 100) * innerW;
+                let h = (ph / 100) * innerH;
+
+                // Kurangi gap pada sisi dalam
+                const halfGap = gap / 2;
+                if (px > 0.1) { x += halfGap; w -= halfGap; }
+                if (px + pw < 99.9) { w -= halfGap; }
+                if (py > 0.1) { y += halfGap; h -= halfGap; }
+                if (py + ph < 99.9) { h -= halfGap; }
+
+                return { x, y, w: Math.max(4, w), h: Math.max(4, h) };
+            });
+        }
+
+        function renderCanvasDOM() {
+            const slotCoords = getActiveLayoutSlots();
+            const slotsContainer = document.getElementById('collageSlotsContainer');
+            const scale = state.previewScale || 1;
+
+            const rects = getSlotRects(slotCoords, state.width, state.height, state.padding, state.gap);
+            const scaledRadius = state.radius * scale;
+            const scaledBorder = state.borderWidth * scale;
+
+            slotsContainer.innerHTML = '';
+
+            rects.forEach((rect, idx) => {
+                const slotData = state.slots[idx];
+                const isSelected = state.selectedSlotIndex === idx;
+                const tiltDeg = state.tilt > 0 ? (slotData?.tiltFactor || 0) * state.tilt : 0;
+
+                const box = document.createElement('div');
+                box.style.position = 'absolute';
+                box.style.left = `${rect.x * scale}px`;
+                box.style.top = `${rect.y * scale}px`;
+                box.style.width = `${rect.w * scale}px`;
+                box.style.height = `${rect.h * scale}px`;
+                box.style.borderRadius = `${scaledRadius}px`;
+                box.style.border = scaledBorder > 0 ? `${scaledBorder}px solid ${state.borderColor}` : 'none';
+                box.style.transform = tiltDeg !== 0 ? `rotate(${tiltDeg}deg)` : 'none';
+                box.style.overflow = 'hidden';
+                box.style.boxShadow = (state.shadow || state.tilt > 0) ? '0 8px 20px rgba(0,0,0,0.22)' : 'none';
+                box.className = `group transition-shadow ${isSelected ? 'ring-2 ring-indigo-500 ring-offset-1 z-20' : ''}`;
+
+                if (slotData && slotData.img) {
+                    // Hitung ukuran cover agar gambar selalu memenuhi kotak
+                    const imgRatio = slotData.img.width / slotData.img.height;
+                    const boxRatio = rect.w / rect.h;
+                    const isRotatedSide = slotData.rotate === 90 || slotData.rotate === 270;
+                    const effectiveImgRatio = isRotatedSide ? (1 / imgRatio) : imgRatio;
+
+                    let baseW, baseH;
+                    if (effectiveImgRatio > boxRatio) {
+                        baseH = rect.h * scale;
+                        baseW = baseH * effectiveImgRatio;
+                    } else {
+                        baseW = rect.w * scale;
+                        baseH = baseW / effectiveImgRatio;
+                    }
+
+                    const imgEl = document.createElement('img');
+                    imgEl.src = slotData.src;
+                    imgEl.draggable = false;
+                    imgEl.style.position = 'absolute';
+                    imgEl.style.left = '50%';
+                    imgEl.style.top = '50%';
+                    imgEl.style.width = `${isRotatedSide ? baseH : baseW}px`;
+                    imgEl.style.height = `${isRotatedSide ? baseW : baseH}px`;
+                    imgEl.style.maxWidth = 'none';
+                    imgEl.style.cursor = 'grab';
+
+                    const combinedFilter = [
+                        state.globalFilter !== 'none' ? state.globalFilter : '',
+                        slotData.filter !== 'none' ? slotData.filter : ''
+                    ].filter(Boolean).join(' ') || 'none';
+                    imgEl.style.filter = combinedFilter;
+
+                    const tx = slotData.panX * scale;
+                    const ty = slotData.panY * scale;
+                    imgEl.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(${slotData.zoom * slotData.flipH}, ${slotData.zoom * slotData.flipV}) rotate(${slotData.rotate}deg)`;
+
+                    // Drag / Pan foto di dalam slot (Mouse & Touch)
+                    setupImagePanning(box, idx, scale);
+                    box.appendChild(imgEl);
+                } else {
+                    // Kotak Kosong (Placeholder)
+                    box.classList.add('bg-gray-200/80', 'dark:bg-gray-800/80', 'hover:bg-indigo-500/20', 'border', 'border-dashed', 'border-gray-400/60', 'flex', 'flex-col', 'items-center', 'justify-center', 'cursor-pointer', 'text-gray-500', 'hover:text-indigo-500');
+                    box.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                        <span class="text-[10px] font-medium mt-1 opacity-80">Tambah</span>
+                    `;
+                    box.onclick = (e) => {
+                        e.stopPropagation();
+                        if (state.swapSourceIndex !== null) {
+                            selectSlot(idx);
+                        } else {
+                            triggerSingleSlotUpload(idx);
+                        }
+                    };
+                }
+
+                slotsContainer.appendChild(box);
+            });
+
+            renderOverlaysDOM(scale);
+        }
+
+        function setupImagePanning(boxEl, slotIdx, scale) {
+            let isDragging = false;
+            let startX = 0, startY = 0;
+            let origPanX = 0, origPanY = 0;
+            let moved = false;
+
+            const onStart = (clientX, clientY) => {
+                selectSlot(slotIdx);
+                isDragging = true;
+                moved = false;
+                startX = clientX;
+                startY = clientY;
+                origPanX = state.slots[slotIdx].panX;
+                origPanY = state.slots[slotIdx].panY;
+            };
+
+            const onMove = (clientX, clientY) => {
+                if (!isDragging) return;
+                const dx = (clientX - startX) / scale;
+                const dy = (clientY - startY) / scale;
+                if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
+                state.slots[slotIdx].panX = origPanX + dx;
+                state.slots[slotIdx].panY = origPanY + dy;
+                renderCanvasDOM();
+            };
+
+            const onEnd = () => {
+                isDragging = false;
+            };
+
+            boxEl.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                onStart(e.clientX, e.clientY);
+                const moveHandler = (ev) => onMove(ev.clientX, ev.clientY);
+                const upHandler = () => {
+                    onEnd();
+                    window.removeEventListener('mousemove', moveHandler);
+                    window.removeEventListener('mouseup', upHandler);
+                };
+                window.addEventListener('mousemove', moveHandler);
+                window.addEventListener('mouseup', upHandler);
+            });
+
+            boxEl.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    e.stopPropagation();
+                    onStart(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
+
+            boxEl.addEventListener('touchmove', (e) => {
+                if (isDragging && e.touches.length === 1) {
+                    onMove(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
+
+            boxEl.addEventListener('touchend', onEnd);
+
+            // Wheel Zoom
+            boxEl.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                selectSlot(slotIdx);
+                const delta = e.deltaY < 0 ? 0.1 : -0.1;
+                adjustSlotZoom(delta);
+            }, { passive: false });
+        }
+
+        function renderOverlaysDOM(scale) {
+            const container = document.getElementById('collageOverlaysContainer');
+            container.innerHTML = '';
+
+            state.overlays.forEach(ov => {
+                const isSelected = state.selectedOverlayId === ov.id;
+                const el = document.createElement('div');
+                el.style.position = 'absolute';
+                el.style.left = `${ov.x}%`;
+                el.style.top = `${ov.y}%`;
+                el.style.transform = 'translate(-50%, -50%)';
+                el.style.fontSize = `${ov.size * scale}px`;
+                el.style.fontFamily = `'${ov.font}', sans-serif`;
+                el.style.color = ov.color;
+                el.style.fontWeight = '700';
+                el.style.lineHeight = '1.2';
+                el.style.whiteSpace = 'nowrap';
+                el.style.cursor = 'move';
+                el.style.pointerEvents = 'auto';
+                el.style.textShadow = ov.type === 'text' ? '0 2px 10px rgba(0,0,0,0.45)' : 'none';
+                el.className = `px-2 py-1 rounded-lg ${isSelected ? 'ring-2 ring-indigo-500 bg-black/15' : ''}`;
+                el.innerText = ov.content;
+
+                // Drag Overlay
+                const startDrag = (clientX, clientY) => {
+                    selectOverlay(ov.id);
+                    const wrapper = document.getElementById('canvasWrapper');
+                    const rect = wrapper.getBoundingClientRect();
+                    const startX = clientX;
+                    const startY = clientY;
+                    const origX = ov.x;
+                    const origY = ov.y;
+
+                    const moveFn = (cx, cy) => {
+                        const dxPct = ((cx - startX) / rect.width) * 100;
+                        const dyPct = ((cy - startY) / rect.height) * 100;
+                        ov.x = Math.max(0, Math.min(100, origX + dxPct));
+                        ov.y = Math.max(0, Math.min(100, origY + dyPct));
+                        el.style.left = `${ov.x}%`;
+                        el.style.top = `${ov.y}%`;
+                    };
+
+                    const onMouseMove = (ev) => moveFn(ev.clientX, ev.clientY);
+                    const onMouseUp = () => {
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    };
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                };
+
+                el.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    startDrag(e.clientX, e.clientY);
+                });
+
+                el.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 1) {
+                        e.stopPropagation();
+                        selectOverlay(ov.id);
+                        const wrapper = document.getElementById('canvasWrapper');
+                        const rect = wrapper.getBoundingClientRect();
+                        const startX = e.touches[0].clientX;
+                        const startY = e.touches[0].clientY;
+                        const origX = ov.x;
+                        const origY = ov.y;
+
+                        const onTouchMove = (ev) => {
+                            const dxPct = ((ev.touches[0].clientX - startX) / rect.width) * 100;
+                            const dyPct = ((ev.touches[0].clientY - startY) / rect.height) * 100;
+                            ov.x = Math.max(0, Math.min(100, origX + dxPct));
+                            ov.y = Math.max(0, Math.min(100, origY + dyPct));
+                            el.style.left = `${ov.x}%`;
+                            el.style.top = `${ov.y}%`;
+                        };
+                        const onTouchEnd = () => {
+                            window.removeEventListener('touchmove', onTouchMove);
+                            window.removeEventListener('touchend', onTouchEnd);
+                        };
+                        window.addEventListener('touchmove', onTouchMove, { passive: true });
+                        window.addEventListener('touchend', onTouchEnd);
+                    }
+                }, { passive: true });
+
+                container.appendChild(el);
+            });
+        }
+
+        // ==========================================
+        // 10. EKSPOR & RENDER RESOLUSI PENUH (CANVAS 2D)
+        // ==========================================
+        function openExportModal() {
+            document.getElementById('exportResSummary').innerText = `${state.width} × ${state.height} piksel`;
+            document.getElementById('exportModal').classList.remove('hidden');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.add('hidden');
+        }
+
+        function selectExportFormat(fmt) {
+            state.exportFormat = fmt;
+            const pngBtn = document.getElementById('fmt-btn-png');
+            const jpgBtn = document.getElementById('fmt-btn-jpeg');
+            const qBox = document.getElementById('jpgQualityContainer');
+
+            if (fmt === 'png') {
+                pngBtn.className = 'py-2.5 px-3 rounded-xl border-2 border-indigo-600 bg-indigo-600/10 text-indigo-500 font-semibold text-xs text-center';
+                jpgBtn.className = 'py-2.5 px-3 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-semibold text-xs text-center';
+                qBox.classList.add('hidden');
+            } else {
+                jpgBtn.className = 'py-2.5 px-3 rounded-xl border-2 border-indigo-600 bg-indigo-600/10 text-indigo-500 font-semibold text-xs text-center';
+                pngBtn.className = 'py-2.5 px-3 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-semibold text-xs text-center';
+                qBox.classList.remove('hidden');
+            }
+        }
+
+        function drawRoundedRectPath(ctx, x, y, w, h, r) {
+            const radius = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + w - radius, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            ctx.lineTo(x + w, y + h - radius);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            ctx.lineTo(x + radius, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        function executeDownload() {
+            const canvas = document.getElementById('renderCanvas');
+            canvas.width = state.width;
+            canvas.height = state.height;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Gambar Latar Belakang
+            if (state.bgType === 'solid') {
+                ctx.fillStyle = state.bgColor;
+                ctx.fillRect(0, 0, state.width, state.height);
+            } else {
+                const grad = ctx.createLinearGradient(0, 0, state.width, state.height);
+                grad.addColorStop(0, state.bgGradient.colors[0]);
+                grad.addColorStop(1, state.bgGradient.colors[1]);
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, state.width, state.height);
+            }
+
+            // 2. Gambar Setiap Slot Foto
+            const slotCoords = getActiveLayoutSlots();
+            const rects = getSlotRects(slotCoords, state.width, state.height, state.padding, state.gap);
+
+            rects.forEach((rect, idx) => {
+                const slot = state.slots[idx];
+                const tiltDeg = state.tilt > 0 ? (slot?.tiltFactor || 0) * state.tilt : 0;
+
+                ctx.save();
+                if (tiltDeg !== 0) {
+                    const cx = rect.x + rect.w / 2;
+                    const cy = rect.y + rect.h / 2;
+                    ctx.translate(cx, cy);
+                    ctx.rotate((tiltDeg * Math.PI) / 180);
+                    ctx.translate(-cx, -cy);
+                }
+
+                // Shadow jika aktif
+                if (state.shadow || state.tilt > 0) {
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+                    ctx.shadowBlur = Math.round(state.width * 0.02);
+                    ctx.shadowOffsetY = Math.round(state.width * 0.008);
+                    drawRoundedRectPath(ctx, rect.x, rect.y, rect.w, rect.h, state.radius);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                    ctx.shadowColor = 'transparent';
+                }
+
+                // Clipping sudut melengkung
+                ctx.save();
+                drawRoundedRectPath(ctx, rect.x, rect.y, rect.w, rect.h, state.radius);
+                ctx.clip();
+
+                if (slot && slot.img) {
+                    const img = slot.img;
+                    const imgRatio = img.width / img.height;
+                    const boxRatio = rect.w / rect.h;
+                    const isRotatedSide = slot.rotate === 90 || slot.rotate === 270;
+                    const effectiveImgRatio = isRotatedSide ? (1 / imgRatio) : imgRatio;
+
+                    let drawW, drawH;
+                    if (effectiveImgRatio > boxRatio) {
+                        drawH = rect.h;
+                        drawW = drawH * effectiveImgRatio;
+                    } else {
+                        drawW = rect.w;
+                        drawH = drawW / effectiveImgRatio;
+                    }
+
+                    const finalW = isRotatedSide ? drawH : drawW;
+                    const finalH = isRotatedSide ? drawW : drawH;
+
+                    // Terapkan Filter
+                    const combinedFilter = [
+                        state.globalFilter !== 'none' ? state.globalFilter : '',
+                        slot.filter !== 'none' ? slot.filter : ''
+                    ].filter(Boolean).join(' ') || 'none';
+                    ctx.filter = combinedFilter;
+
+                    // Transformasi posisi tengah kotak + pan + zoom + flip + rotate
+                    const centerX = rect.x + rect.w / 2 + slot.panX;
+                    const centerY = rect.y + rect.h / 2 + slot.panY;
+
+                    ctx.translate(centerX, centerY);
+                    ctx.scale(slot.zoom * slot.flipH, slot.zoom * slot.flipV);
+                    ctx.rotate((slot.rotate * Math.PI) / 180);
+
+                    ctx.drawImage(img, -finalW / 2, -finalH / 2, finalW, finalH);
+                } else {
+                    // Kotak kosong di hasil ekspor berwarna abu-abu lembut
+                    ctx.fillStyle = 'rgba(156, 163, 175, 0.25)';
+                    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+                }
+                ctx.restore();
+
+                // Garis bingkai tiap foto jika aktif
+                if (state.borderWidth > 0) {
+                    drawRoundedRectPath(ctx, rect.x, rect.y, rect.w, rect.h, state.radius);
+                    ctx.lineWidth = state.borderWidth * 2;
+                    ctx.strokeStyle = state.borderColor;
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            });
+
+            // 3. Gambar Teks & Stiker Overlay
+            state.overlays.forEach(ov => {
+                ctx.save();
+                const posX = (ov.x / 100) * state.width;
+                const posY = (ov.y / 100) * state.height;
+                ctx.font = `700 ${ov.size}px '${ov.font}', sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                if (ov.type === 'text') {
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+                    ctx.shadowBlur = Math.round(ov.size * 0.2);
+                    ctx.shadowOffsetY = Math.round(ov.size * 0.05);
+                    ctx.fillStyle = ov.color;
+                }
+                ctx.fillText(ov.content, posX, posY);
+                ctx.restore();
+            });
+
+            // 4. Unduh File
+            const fileNameInput = document.getElementById('exportFileName').value.trim() || 'kolase-foto';
+            const mimeType = state.exportFormat === 'png' ? 'image/png' : 'image/jpeg';
+            const quality = parseInt(document.getElementById('exportQualitySlider').value) / 100;
+            const ext = state.exportFormat === 'png' ? 'png' : 'jpg';
+
+            const dataUrl = canvas.toDataURL(mimeType, quality);
+            const link = document.createElement('a');
+            link.download = `${fileNameInput}.${ext}`;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            closeExportModal();
+            showToast(`Berhasil mengunduh ${fileNameInput}.${ext} (${state.width}×${state.height}px)!`);
+        }
+    </script>
+</body>
+</html>
